@@ -14,7 +14,7 @@ class Literal():
         return a_copy
     def __str__(self):
         if self.neg:
-            return "!" + str(self.varnum)
+            return "¬" + str(self.varnum)
         else:
             return str(self.varnum)
     def __hash__(self):
@@ -27,8 +27,8 @@ class Clause():
         self.lits = { Literal(abs(int(v)), np.sign(int(v)))
             for v in string.split(" ") }
     def __str__(self):
-        return " or ".join(str(l) for l in list(self.lits))
     def remove_lit(self, lit):
+        return " ∨ ".join(str(l) for l in list(self.lits))
         self.lits.remove(lit)
     def is_unit(self):
         return len(self.lits) == 1
@@ -43,7 +43,7 @@ class KB():
     def remove_clause(self, c):
         self.clauses -= {c}
     def __str__(self):
-        return " and ".join(f"({c})" for c in list(self.clauses))
+        return " ∧ ".join(f"({c})" for c in list(self.clauses))
 
 
 def propagate_units(kb):
