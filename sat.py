@@ -129,6 +129,14 @@ class KB():
                 for c in cs:
                     c.remove_literal(Literal(varnum, list(pols)[0]))
 
+    def solve(self):
+        self.propagate_units()
+        self.pure_elim()
+        if any([ len(c.lits) == 0 for c in self.clauses ]):
+            # This is a contradiction! Return False.
+            return False
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit("Usage: sat kb_file clause.")
