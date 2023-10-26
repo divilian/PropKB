@@ -5,8 +5,10 @@ from copy import copy
 import numpy as np
 
 class Literal():
+    varnums = set()
     def __init__(self, varnum, neg):
         self.varnum = varnum
+        Literal.varnums |= {varnum}
         self.neg = neg
     def negated_form_of(self):
         a_copy = copy(self)
