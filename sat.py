@@ -7,6 +7,7 @@ import numpy as np
 class Literal():
     varnums = set()
     def __init__(self, varnum, neg):
+        # If neg=-1, this is a negated variable. If neg=1, it's positive.
         self.varnum = varnum
         Literal.varnums |= {varnum}
         self.neg = neg
@@ -15,7 +16,7 @@ class Literal():
         a_copy.neg = -self.neg
         return a_copy
     def __str__(self):
-        if self.neg:
+        if self.neg == -1:
             return "¬" + str(self.varnum)
         else:
             return str(self.varnum)
