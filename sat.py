@@ -3,6 +3,7 @@ import sys
 import os
 from copy import copy
 import numpy as np
+import logging
 
 class Literal():
     varnums = set()
@@ -65,7 +66,7 @@ class KB():
         its negation from any clauses that match its negation.
         """
         for unit_clause in [ c for c in self.clauses if c.is_unit() ]:
-            print(f"Looking at unit_clause {unit_clause}...")
+            logging.debug(f"Looking at unit_clause {unit_clause}...")
             the_lit = list(unit_clause.lits)[0]
             if the_lit.varnum in self.assignments:
                 if the_lit.neg != (self.assignments[the_lit.varnum] == 1):
@@ -73,8 +74,8 @@ class KB():
                     # clauses with opposite polarity!
                     sys.exit("Houston, we have two incompatible unit clauses.")
             self.assignments[the_lit.varnum] = (the_lit.neg == 1)
-            print(f"    propagate_units officially assigns {the_lit.varnum} "
-                f"the value {the_lit.neg == 1}")
+            logging.debug(f"    propagate_units officially assigns "
+                f"{the_lit.varnum} the value {the_lit.neg == 1}")
             self.remove_clause(unit_clause)
 
             # For every unit clause, we know that the value of its only literal
@@ -84,7 +85,7 @@ class KB():
             clauses_to_remove = []
             for c in self.clauses:
                 if c.contains_literal(the_lit):
-                    print(f"    Removing clause {c}")
+                    logging.debug(f"    Removing clause {c}")
                     clauses_to_remove += [c]
             for ctr in clauses_to_remove:
                 self.remove_clause(ctr)
@@ -96,7 +97,8 @@ class KB():
             for c in self.clauses:
                 negated_form = the_lit.negated_form_of()
                 if c.contains_literal(negated_form):
-                    print(f"    Removing literal {negated_form} from {c}...")
+                    logging.debug(f"    Removing literal {negated_form} from "
+                        f"{c}...")
                     c.remove_literal(negated_form)
 
     #def elim_easy_doubles: TODO if the same literal appears twice in a clause
@@ -109,22 +111,23 @@ class KB():
         it to what it needs to be.
         """
         for varnum in Literal.varnums:
-            print(f"Looking at {varnum}...")
+            logging.debug(f"Looking at {varnum}...")
             cs = [ c for c in self.clauses if c.contains_variable(varnum) ]
-            print(f"cs is {cs}")
+            logging.debug(f"cs is {[ str(c) for c in cs ]}")
             pols = { c.polarity_of_variable(varnum) for c in cs }
             if len(pols) == 0:
                 # Must have been removed by propagate_units(). Never mind.
                 pass
             if len(pols) == 1:
                 # Great! It's pure. Eliminate it.
+                logging.debug(f"Variable {varnum} is pure!") 
                 if list(pols)[0] == 1:
                     self.assignments[varnum] = True
-                    print(f"pure_elim officially assigns {varnum} "
+                    logging.debug(f"pure_elim() officially assigns {varnum} "
                         "the value True")
                 else:
                     self.assignments[varnum] = False
-                    print(f"pure_elim officially assigns {varnum} "
+                    logging.debug(f"pure_elim() officially assigns {varnum} "
                         "the value False")
                 for c in cs:
                     c.remove_literal(Literal(varnum, list(pols)[0]))
@@ -138,6 +141,9 @@ class KB():
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.DEBUG)
+
     if len(sys.argv) != 3:
         sys.exit("Usage: sat kb_file clause.")
 
