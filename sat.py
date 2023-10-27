@@ -65,6 +65,7 @@ class KB():
         simplifications: auto-satisfy any clauses that match it, and remove
         its negation from any clauses that match its negation.
         """
+        logging.info("propagate_units...")
         for unit_clause in [ c for c in self.clauses if c.is_unit() ]:
             logging.debug(f"Looking at unit_clause {unit_clause}...")
             the_lit = list(unit_clause.lits)[0]
@@ -110,31 +111,37 @@ class KB():
         For any variable that appears with only one polarity, go ahead and set
         it to what it needs to be.
         """
+        logging.info("pure_elim...")
+        made_progress = False
         for varnum in Literal.varnums:
-            logging.debug(f"Looking at {varnum}...")
+            logging.debug(f"  Looking at {varnum}...")
             cs = [ c for c in self.clauses if c.contains_variable(varnum) ]
-            logging.debug(f"cs is {[ str(c) for c in cs ]}")
+            logging.debug(f"  cs is {[ str(c) for c in cs ]}")
             pols = { c.polarity_of_variable(varnum) for c in cs }
             if len(pols) == 0:
                 # Must have been removed by propagate_units(). Never mind.
                 pass
             if len(pols) == 1:
                 # Great! It's pure. Eliminate it.
-                logging.debug(f"Variable {varnum} is pure!") 
+                logging.debug(f"  Variable {varnum} is pure!") 
                 if list(pols)[0] == 1:
                     self.assignments[varnum] = True
-                    logging.debug(f"pure_elim() officially assigns {varnum} "
+                    logging.debug(f"  pure_elim() officially assigns {varnum} "
                         "the value True")
                 else:
                     self.assignments[varnum] = False
-                    logging.debug(f"pure_elim() officially assigns {varnum} "
+                    logging.debug(f"  pure_elim() officially assigns {varnum} "
                         "the value False")
                 for c in cs:
-                    c.remove_literal(Literal(varnum, list(pols)[0]))
+                    self.remove_clause(c)
+                made_progress = True
+        return made_progress
 
     def solve(self):
         self.propagate_units()
-        self.pure_elim()
+        # As long as we're making progress, keep pure_elim'ing.
+        while self.pure_elim():
+            pass
         if any([ len(c.lits) == 0 for c in self.clauses ]):
             # This is a contradiction! Return False.
             return False
@@ -155,8 +162,6 @@ if __name__ == "__main__":
     clause = sys.argv[2]
 
     print(myKB)
-    myKB.propagate_units()
-    print(myKB)
-    myKB.pure_elim()
+    myKB.solve()
     print(myKB)
     print(f"The answer is: {myKB.assignments}")
