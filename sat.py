@@ -1,7 +1,7 @@
 
 import sys
 import os
-from copy import copy
+from copy import copy, deepcopy
 import numpy as np
 import logging
 
@@ -59,43 +59,43 @@ class KB():
     def __str__(self):
         return " ∧ ".join(f"({c})" for c in list(self.clauses))
 
-    def propagate_units(self):
+    def propagate_units(self, remaining_clauses, assignments):
         """
         For all "unit clauses" (only one literal) perform the obvious
         simplifications: auto-satisfy any clauses that match it, and remove
         its negation from any clauses that match its negation.
         """
         logging.info("propagate_units...")
-        for unit_clause in [ c for c in self.clauses if c.is_unit() ]:
+        for unit_clause in [ c for c in remaining_clauses if c.is_unit() ]:
             logging.debug(f"Looking at unit_clause {unit_clause}...")
             the_lit = list(unit_clause.lits)[0]
-            if the_lit.varnum in self.assignments:
-                if the_lit.neg != (self.assignments[the_lit.varnum] == 1):
+            if the_lit.varnum in assignments:
+                if the_lit.neg != (assignments[the_lit.varnum] == 1):
                     # Houston, we have a problem. We have at least two unit
                     # clauses with opposite polarity!
                     sys.exit("Houston, we have two incompatible unit clauses.")
-            self.assignments[the_lit.varnum] = (the_lit.neg == 1)
+            assignments[the_lit.varnum] = (the_lit.neg == 1)
             logging.debug(f"    propagate_units officially assigns "
                 f"{the_lit.varnum} the value {the_lit.neg == 1}")
-            self.remove_clause(unit_clause)
+            remaining_clauses -= {unit_clause}
 
             # For every unit clause, we know that the value of its only literal
             # is trivially set in stone. So, if there's any other clause that
             # also has that literal, we can just get rid of it since it's
             # already satisfied.
             clauses_to_remove = []
-            for c in self.clauses:
+            for c in remaining_clauses:
                 if c.contains_literal(the_lit):
                     logging.debug(f"    Removing clause {c}")
                     clauses_to_remove += [c]
             for ctr in clauses_to_remove:
-                self.remove_clause(ctr)
+                remaining_clauses -= {ctr}
 
             # On the other hand, we also know that the negation of this literal
             # will *never* be true. So, remove that negation in any other
             # clause in which it occurs. If that gives an empty clause, we're
             # doomed.
-            for c in self.clauses:
+            for c in remaining_clauses:
                 negated_form = the_lit.negated_form_of()
                 if c.contains_literal(negated_form):
                     logging.debug(f"    Removing literal {negated_form} from "
@@ -106,45 +106,48 @@ class KB():
     # with the same polarity, remove all but one for convenience. If it appears
     # with *both* polarities, then the clause is trivially true.
 
-    def pure_elim(self):
+    def pure_elim(self, remaining_clauses, assignments):
         """
         For any variable that appears with only one polarity, go ahead and set
         it to what it needs to be.
         """
         logging.info("pure_elim...")
         made_progress = False
-        for varnum in Literal.varnums:
-            logging.debug(f"  Looking at {varnum}...")
-            cs = [ c for c in self.clauses if c.contains_variable(varnum) ]
+        for vn in Literal.varnums:
+            logging.debug(f"  Looking at {vn}...")
+            cs = [ c for c in remaining_clauses if c.contains_variable(vn) ]
             logging.debug(f"  cs is {[ str(c) for c in cs ]}")
-            pols = { c.polarity_of_variable(varnum) for c in cs }
+            pols = { c.polarity_of_variable(vn) for c in cs }
             if len(pols) == 0:
                 # Must have been removed by propagate_units(). Never mind.
                 pass
             if len(pols) == 1:
                 # Great! It's pure. Eliminate it.
-                logging.debug(f"  Variable {varnum} is pure!") 
+                logging.debug(f"  Variable {vn} is pure!") 
                 if list(pols)[0] == 1:
-                    self.assignments[varnum] = True
-                    logging.debug(f"  pure_elim() officially assigns {varnum} "
+                    assignments[vn] = True
+                    logging.debug(f"  pure_elim() officially assigns {vn} "
                         "the value True")
                 else:
-                    self.assignments[varnum] = False
-                    logging.debug(f"  pure_elim() officially assigns {varnum} "
+                    assignments[vn] = False
+                    logging.debug(f"  pure_elim() officially assigns {vn} "
                         "the value False")
                 for c in cs:
-                    self.remove_clause(c)
+                    remaining_clauses -= {c}
                 made_progress = True
         return made_progress
 
     def solve(self):
-        self.propagate_units()
+        remaining_clauses = deepcopy(self.clauses)
+        assignments = {}
+        self.propagate_units(remaining_clauses, assignments)
         # As long as we're making progress, keep pure_elim'ing.
-        while self.pure_elim():
+        while self.pure_elim(remaining_clauses, assignments):
             pass
         if any([ len(c.lits) == 0 for c in self.clauses ]):
             # This is a contradiction! Return False.
             return False
+        return assignments
 
 
 if __name__ == "__main__":
@@ -162,6 +165,9 @@ if __name__ == "__main__":
     clause = sys.argv[2]
 
     print(myKB)
-    myKB.solve()
+    assignments = myKB.solve()
     print(myKB)
-    print(f"The answer is: {myKB.assignments}")
+    if assignments:
+        print(f"The answer is: {assignments}")
+    else:
+        print(f"Cannot be solved!")
