@@ -14,6 +14,8 @@ if __name__ == "__main__":
     num_vars = int(sys.argv[1])
     num_clauses = int(sys.argv[2])
     num_lits_per_clause = int(sys.argv[3])
+    if num_lits_per_clause > num_vars:
+        sys.exit("Can't have more lits per clause than variables!")
     filename = sys.argv[4]
 
     if os.path.isfile(filename):
@@ -26,7 +28,7 @@ if __name__ == "__main__":
     with open(filename, "w", encoding="utf-8") as f:
         for _ in range(num_clauses):
             num_lits = int(np.random.randint(
-                num_lits_per_clause-3, num_lits_per_clause))
+                num_lits_per_clause-3, num_lits_per_clause+1))
             guar = np.random.choice(range(1,num_vars+1), size=1)[0]
             if assignments[guar]:
                 clause = np.array([ guar ])
