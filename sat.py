@@ -4,6 +4,7 @@ import os
 from copy import copy, deepcopy
 import numpy as np
 import logging
+from pprint import pprint
 
 class Literal():
     varnums = set()
@@ -168,6 +169,8 @@ if __name__ == "__main__":
     assignments = myKB.solve()
     print(myKB)
     if assignments:
-        print(f"The answer is: {assignments}")
+        print("The answer is: ")
+        # Using pprint to get assignments printed in varnum order
+        pprint(assignments)
     else:
         print(f"Cannot be solved!")
