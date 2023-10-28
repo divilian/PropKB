@@ -138,17 +138,34 @@ class KB():
                 made_progress = True
         return made_progress
 
-    def solve(self):
-        remaining_clauses = deepcopy(self.clauses)
-        assignments = {}
+    def solve_rec(self, remaining_clauses, assignments):
         self.propagate_units(remaining_clauses, assignments)
         # As long as we're making progress, keep pure_elim'ing.
         while self.pure_elim(remaining_clauses, assignments):
             pass
-        if any([ len(c.lits) == 0 for c in self.clauses ]):
+        if any([ len(c.lits) == 0 for c in remaining_clauses ]):
             # This is a contradiction! Return False.
             return False
-        return assignments
+        remaining_varnums = Literal.varnums - set(assignments.keys())
+        if len(remaining_varnums) == 0:
+            return assignments
+        var_to_try = list(remaining_varnums)[0]
+        assignments_try_true = deepcopy(assignments)
+        assignments_try_true[var_to_try] = True
+        result = self.solve_rec(remaining_clauses, assignments_try_true)
+        if result:
+            return result
+        assignments_try_false = deepcopy(assignments)
+        assignments_try_true[var_to_try] = False
+        result = self.solve_rec(remaining_clauses, assignments_try_true)
+        if result:
+            return result
+        return False
+
+    def solve(self):
+        remaining_clauses = deepcopy(self.clauses)
+        assignments = {}
+        return self.solve_rec(remaining_clauses, assignments)
 
 
 if __name__ == "__main__":
