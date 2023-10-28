@@ -170,7 +170,7 @@ class KB():
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     if len(sys.argv) != 3:
         sys.exit("Usage: sat kb_file clause.")
@@ -182,9 +182,8 @@ if __name__ == "__main__":
     myKB = KB(sys.argv[1])
     clause = sys.argv[2]
 
-    print(myKB)
+    print(f"Solving {myKB}...")
     assignments = myKB.solve()
-    print(myKB)
     if assignments:
         print("The answer is: ")
         # Using pprint to get assignments printed in varnum order
