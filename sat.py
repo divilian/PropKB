@@ -33,8 +33,15 @@ class Literal():
         return self.var == other.var  and  self.neg == other.neg
 
 class Clause():
-    def __init__(self, string):
-        self.lits = { Literal(v) for v in string.split(" ") }
+    def __init__(self):
+        self.lits = set()
+    @classmethod
+    def parse(cls, string):
+        retval = cls()
+        retval.lits = { Literal(v) for v in string.split(" ") }
+        return retval
+    def add_literal(self, lit):
+        self.lits.add(lit)
     def remove_literal(self, lit):
         self.lits.remove(lit)
     def is_unit(self):
@@ -57,7 +64,7 @@ class KB():
         self.clauses = set()
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
-                self.add_clause(Clause(clause_line))
+                self.add_clause(Clause.parse(clause_line))
     def add_clause(self, c):
         self.clauses |= {c}
     def remove_clause(self, c):
