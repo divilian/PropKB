@@ -181,6 +181,25 @@ class KB():
         assignments = {}
         return self.solve_rec(remaining_clauses, assignments)
 
+    def can_prove(self, hypothesis):
+        """
+        Return True if the hypothesis passed (a Literal) is guaranteed to be
+        true by this knowledge base, and False otherwise.
+        TODO: permit arbitrary expressions as hypotheses.
+        """
+        if type(hypothesis) is str:
+            hypothesis = Literal(hypothesis)
+        neg_hypo = hypothesis.negated_form_of()
+        neg_hypo_clause = Clause()
+        neg_hypo_clause.add_literal(neg_hypo)
+        remaining_clauses = deepcopy(self.clauses)
+        remaining_clauses |= {neg_hypo_clause}
+        assignments = {}
+        if self.solve_rec(remaining_clauses, assignments):
+            return False, assignments
+        else:
+            return True, assignments
+
     def __str__(self):
         return " ∧ ".join(f"({c})" for c in list(self.clauses))
     def __repr__(self):
@@ -201,10 +220,9 @@ if __name__ == "__main__":
     clause = sys.argv[2]
 
     print(f"Solving {myKB}...")
-    assignments = myKB.get_solution()
-    if assignments:
-        print("The answer is: ")
-        # Using pprint to get assignments printed in alpha order
-        pprint(assignments)
+    provable, assignments = myKB.can_prove(clause)
+    if provable:
+        print(f"Yes, {clause} is guaranteed true!")
     else:
-        print(f"Cannot be solved!")
+        print(f"No, {clause} cannot be proven.")
+    pprint(assignments)
