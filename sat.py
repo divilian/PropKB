@@ -74,13 +74,13 @@ class KB():
             logging.debug(f"Looking at unit_clause {unit_clause}...")
             the_lit = list(unit_clause.lits)[0]
             if the_lit.var in assignments:
-                if the_lit.neg != (assignments[the_lit.var] == 1):
+                if the_lit.neg != (not assignments[the_lit.var]):
                     # Houston, we have a problem. We have at least two unit
                     # clauses with opposite polarity!
                     sys.exit("Houston, we have two incompatible unit clauses.")
-            assignments[the_lit.var] = (the_lit.neg == 1)
+            assignments[the_lit.var] = not the_lit.neg
             logging.debug(f"    propagate_units officially assigns "
-                f"{the_lit.var} the value {the_lit.neg == 1}")
+                f"{the_lit.var} the value {not the_lit.neg}")
             remaining_clauses -= {unit_clause}
 
             # For every unit clause, we know that the value of its only literal
