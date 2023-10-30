@@ -165,7 +165,11 @@ class KB():
             return result
         return False
 
-    def solve(self):
+    def get_solution(self):
+        """
+        If possible, return a sample solution (set of assignments to variables)
+        that satisfies this knowledge base. Otherwise, return False.
+        """
         remaining_clauses = deepcopy(self.clauses)
         assignments = {}
         return self.solve_rec(remaining_clauses, assignments)
@@ -190,7 +194,7 @@ if __name__ == "__main__":
     clause = sys.argv[2]
 
     print(f"Solving {myKB}...")
-    assignments = myKB.solve()
+    assignments = myKB.get_solution()
     if assignments:
         print("The answer is: ")
         # Using pprint to get assignments printed in alpha order
