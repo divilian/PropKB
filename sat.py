@@ -53,7 +53,6 @@ class Clause():
 class KB():
     def __init__(self, filename):
         self.clauses = set()
-        self.assignments = {}
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
                 self.add_clause(Clause(clause_line))
