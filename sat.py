@@ -22,6 +22,8 @@ class Literal():
             return "¬" + str(self.varnum)
         else:
             return str(self.varnum)
+    def __repr__(self):
+        return f"Literal({self.varnum},self.neg)"
     def __hash__(self):
         return self.varnum
     def __eq__(self, other):
@@ -31,8 +33,6 @@ class Clause():
     def __init__(self, string):
         self.lits = { Literal(abs(int(v)), np.sign(int(v)))
             for v in string.split(" ") }
-    def __str__(self):
-        return " ∨ ".join(str(l) for l in list(self.lits))
     def remove_literal(self, lit):
         self.lits.remove(lit)
     def is_unit(self):
@@ -45,6 +45,10 @@ class Clause():
         for lit in self.lits:
             if lit.varnum == varnum:
                 return lit.neg
+    def __str__(self):
+        return " ∨ ".join(str(l) for l in list(self.lits))
+    def __repr__(self):
+        return f"Clause({self.lits})"
 
 class KB():
     def __init__(self, filename):
@@ -57,8 +61,6 @@ class KB():
         self.clauses |= {c}
     def remove_clause(self, c):
         self.clauses -= {c}
-    def __str__(self):
-        return " ∧ ".join(f"({c})" for c in list(self.clauses))
 
     def propagate_units(self, remaining_clauses, assignments):
         """
@@ -167,6 +169,10 @@ class KB():
         assignments = {}
         return self.solve_rec(remaining_clauses, assignments)
 
+    def __str__(self):
+        return " ∧ ".join(f"({c})" for c in list(self.clauses))
+    def __repr__(self):
+        return f"KB({self.clauses})"
 
 if __name__ == "__main__":
 
