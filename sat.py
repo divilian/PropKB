@@ -7,43 +7,45 @@ import logging
 from pprint import pprint
 
 class Literal():
-    varnums = set()
-    def __init__(self, varnum, neg):
-        # If neg=-1, this is a negated variable. If neg=1, it's positive.
-        self.varnum = varnum
-        Literal.varnums |= {varnum}
-        self.neg = neg
+    vars = set()
+    def __init__(self, varstring):
+        if varstring[0] == "-":
+            self.neg = True
+            self.var = varstring[1:]
+        else:
+            self.neg = False
+            self.var = varstring
+        Literal.vars |= {self.var}
     def negated_form_of(self):
         a_copy = copy(self)
-        a_copy.neg = -self.neg
+        a_copy.neg = not self.neg
         return a_copy
     def __str__(self):
-        if self.neg == -1:
-            return "¬" + str(self.varnum)
+        if self.neg:
+            return "¬" + str(self.var)
         else:
-            return str(self.varnum)
+            return str(self.var)
     def __repr__(self):
-        return f"Literal({self.varnum},self.neg)"
+        return f"Literal({'¬' if self.neg else ''}{self.var})"
     def __hash__(self):
-        return self.varnum
+        return self.var.__hash__()
     def __eq__(self, other):
-        return self.varnum == other.varnum  and  self.neg == other.neg
+        return self.var == other.var  and  self.neg == other.neg
 
 class Clause():
     def __init__(self, string):
-        self.lits = { Literal(abs(int(v)), np.sign(int(v)))
-            for v in string.split(" ") }
+        self.lits = { Literal(v) for v in string.split(" ") }
     def remove_literal(self, lit):
         self.lits.remove(lit)
     def is_unit(self):
         return len(self.lits) == 1
     def contains_literal(self, lit):
         return lit in self.lits
-    def contains_variable(self, varnum):
-        return varnum in [ l.varnum for l in self.lits ]
-    def polarity_of_variable(self, varnum):
+    def contains_variable(self, var):
+        return var in [ l.var for l in self.lits ]
+    def polarity_of_variable(self, var):
         for lit in self.lits:
-            if lit.varnum == varnum:
+            if lit.var == var:
                 return lit.neg
     def __str__(self):
         return " ∨ ".join(str(l) for l in list(self.lits))
@@ -71,14 +73,14 @@ class KB():
         for unit_clause in [ c for c in remaining_clauses if c.is_unit() ]:
             logging.debug(f"Looking at unit_clause {unit_clause}...")
             the_lit = list(unit_clause.lits)[0]
-            if the_lit.varnum in assignments:
-                if the_lit.neg != (assignments[the_lit.varnum] == 1):
+            if the_lit.var in assignments:
+                if the_lit.neg != (assignments[the_lit.var] == 1):
                     # Houston, we have a problem. We have at least two unit
                     # clauses with opposite polarity!
                     sys.exit("Houston, we have two incompatible unit clauses.")
-            assignments[the_lit.varnum] = (the_lit.neg == 1)
+            assignments[the_lit.var] = (the_lit.neg == 1)
             logging.debug(f"    propagate_units officially assigns "
-                f"{the_lit.varnum} the value {the_lit.neg == 1}")
+                f"{the_lit.var} the value {the_lit.neg == 1}")
             remaining_clauses -= {unit_clause}
 
             # For every unit clause, we know that the value of its only literal
@@ -115,7 +117,7 @@ class KB():
         """
         logging.info("pure_elim...")
         made_progress = False
-        for vn in Literal.varnums:
+        for vn in Literal.vars:
             logging.debug(f"  Looking at {vn}...")
             cs = [ c for c in remaining_clauses if c.contains_variable(vn) ]
             logging.debug(f"  cs is {[ str(c) for c in cs ]}")
@@ -147,10 +149,10 @@ class KB():
         if any([ len(c.lits) == 0 for c in remaining_clauses ]):
             # This is a contradiction! Return False.
             return False
-        remaining_varnums = Literal.varnums - set(assignments.keys())
-        if len(remaining_varnums) == 0:
+        remaining_vars = Literal.vars - set(assignments.keys())
+        if len(remaining_vars) == 0:
             return assignments
-        var_to_try = list(remaining_varnums)[0]
+        var_to_try = list(remaining_vars)[0]
         assignments_try_true = deepcopy(assignments)
         assignments_try_true[var_to_try] = True
         result = self.solve_rec(remaining_clauses, assignments_try_true)
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     assignments = myKB.solve()
     if assignments:
         print("The answer is: ")
-        # Using pprint to get assignments printed in varnum order
+        # Using pprint to get assignments printed in alpha order
         pprint(assignments)
     else:
         print(f"Cannot be solved!")
