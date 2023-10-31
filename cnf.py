@@ -28,6 +28,7 @@ def convert_to_cnf(s):
     tree = parse(tokens)
     tree = eliminate_equiv(tree)
     tree = eliminate_implies(tree)
+    tree = eliminate_xors(tree)
     return tree
 
 def eliminate_equiv(non_cnf_tree):
@@ -40,6 +41,25 @@ def eliminate_equiv(non_cnf_tree):
             reverse.left, reverse.right = \
                 eliminate_equiv(reverse.right), eliminate_equiv(reverse.left)
             return Node(left=tree, me="^", right=reverse)
+        else:
+            tree.left = eliminate_equiv(tree.left)
+            tree.right = eliminate_equiv(tree.right)
+            return tree
+    else:
+        return non_cnf_tree
+        
+def eliminate_xors(non_cnf_tree):
+    if type(non_cnf_tree) is Node:
+        tree = deepcopy(non_cnf_tree)
+        if tree.me == "x":
+            other = deepcopy(non_cnf_tree)
+            tree.left = Node(None,"-",eliminate_xors(tree.left))
+            tree.me = "^"
+            tree.right = eliminate_xors(tree.right)
+            other.left = eliminate_xors(other.left)
+            other.me = "^"
+            other.right = Node(None,"-",eliminate_xors(other.right))
+            return Node(left=tree, me="v", right=other)
         else:
             tree.left = eliminate_equiv(tree.left)
             tree.right = eliminate_equiv(tree.right)
@@ -91,6 +111,10 @@ def parse(tokens):
             while ops and ops[-1] not in ['(','[','<=>','=>']:
                 make_node(ops, operands)
             ops.append('v')
+        elif token in ['x','⊕']:
+            while ops and ops[-1] not in ['(','[','<=>','=>']:
+                make_node(ops, operands)
+            ops.append('x')
         elif token in ['^','∧']:
             while ops and ops[-1] not in ['(','[','<=>','=>','v']:
                 make_node(ops, operands)
@@ -118,6 +142,7 @@ def parse(tokens):
 
     return operands.pop()
 
+# TODO raise exception if "v" or "x" is used as a symbol
 def tokenize(s):
     """
     Given a sentence (string) of propositional logic, return a list of its
