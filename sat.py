@@ -77,41 +77,51 @@ class KB():
         its negation from any clauses that match its negation.
         """
         logging.info("propagate_units...")
-        for unit_clause in [ c for c in remaining_clauses if c.is_unit() ]:
-            logging.debug(f"Looking at unit_clause {unit_clause}...")
-            the_lit = list(unit_clause.lits)[0]
-            if the_lit.var in assignments:
-                if the_lit.neg != (not assignments[the_lit.var]):
-                    # Houston, we have a problem. We have at least two unit
-                    # clauses with opposite polarity!
-                    sys.exit("Houston, we have two incompatible unit clauses.")
-            assignments[the_lit.var] = not the_lit.neg
-            logging.debug(f"    propagate_units officially assigns "
-                f"{the_lit.var} the value {not the_lit.neg}")
-            remaining_clauses -= {unit_clause}
+        while remaining_clauses:
+            nrc = len(remaining_clauses)
+            i = 0
+            while i < nrc and not list(remaining_clauses)[i].is_unit():
+                i += 1
+            if i == nrc:
+                logging.debug(f"Continue ({i})")
+                break
+            else:
+                unit_clause = list(remaining_clauses)[i]
+                logging.debug(f"Looking at unit_clause {unit_clause}...")
+                the_lit = list(unit_clause.lits)[0]
+                if the_lit.var in assignments:
+                    if the_lit.neg != (not assignments[the_lit.var]):
+                        # Houston, we have a problem. We have at least two unit
+                        # clauses with opposite polarity!
+                        sys.exit("Houston, we have two incompatible unit clauses.")
+                assignments[the_lit.var] = not the_lit.neg
+                logging.debug(f"    propagate_units officially assigns "
+                    f"{the_lit.var} the value {not the_lit.neg}")
+                remaining_clauses -= {unit_clause}
 
-            # For every unit clause, we know that the value of its only literal
-            # is trivially set in stone. So, if there's any other clause that
-            # also has that literal, we can just get rid of it since it's
-            # already satisfied.
-            clauses_to_remove = []
-            for c in remaining_clauses:
-                if c.contains_literal(the_lit):
-                    logging.debug(f"    Removing clause {c}")
-                    clauses_to_remove += [c]
-            for ctr in clauses_to_remove:
-                remaining_clauses -= {ctr}
+                # For every unit clause, we know that the value of its only
+                # literal is trivially set in stone. So, if there's any other
+                # clause that also has that literal, we can just get rid of it
+                # since it's already satisfied.
+                clauses_to_remove = []
+                for c in remaining_clauses:
+                    if c.contains_literal(the_lit):
+                        logging.debug(f"    Removing clause {c}")
+                        clauses_to_remove += [c]
+                for ctr in clauses_to_remove:
+                    remaining_clauses -= {ctr}
 
-            # On the other hand, we also know that the negation of this literal
-            # will *never* be true. So, remove that negation in any other
-            # clause in which it occurs. If that gives an empty clause, we're
-            # doomed.
-            for c in remaining_clauses:
-                negated_form = the_lit.negated_form_of()
-                if c.contains_literal(negated_form):
-                    logging.debug(f"    Removing literal {negated_form} from "
-                        f"{c}...")
-                    c.remove_literal(negated_form)
+                # On the other hand, we also know that the negation of this
+                # literal will *never* be true. So, remove that negation in any
+                # other clause in which it occurs. If that gives an empty
+                # clause, we're doomed.
+                for c in remaining_clauses:
+                    negated_form = the_lit.negated_form_of()
+                    if c.contains_literal(negated_form):
+                        logging.debug(f"    Removing lit {negated_form} from "
+                            f"{c}...")
+                        c.remove_literal(negated_form)
+            continue
 
     #def elim_easy_doubles: TODO if the same literal appears twice in a clause
     # with the same polarity, remove all but one for convenience. If it appears
