@@ -1,15 +1,80 @@
 
 import sys
 import logging
+import re
 from sat import Literal, Clause
+
+class Node():
+    def __init__(self, left=None, me=None, right=None):
+        self.left = left
+        self.me = me
+        self.right = right
+    def __repr__(self):
+        retval = "Node("
+        if self.left:
+            retval += self.left.__repr__() + ","
+        retval += self.me.__repr__()
+        if self.right:
+            retval += "," + self.right.__repr__()
+        return retval + ")"
 
 def convert_to_cnf(s):
     """
     Given a sentence (string) of propositional logic, return a set of Clause
     objects representing its equivalent in CNF.
     """
-    stack = []
-    return None
+    tokens = tokenize(s)
+    tree = parse(tokens)
+    return tree
+            
+
+def make_node(operators, operands):
+    right = operands.pop()
+    left = operands.pop()
+    operands.append(Node(left,operators.pop(),right))
+
+def parse(tokens):
+    logging.info(f"Parse {tokens}...")
+    operands = []
+    operators = []
+    while tokens:
+        token = tokens.pop(0)
+        logging.debug(f"token is |{token}|, operators=|{operators}|, "
+            f"operands=|{operands}|")
+        if token in '-¬':
+            negated = parse(tokens)
+            return Node(left='-',me=negated,right=None)
+        elif token in ['v','∨']:
+            while operators and operators[0] not in ['(','[']:
+                make_node(operators, operands)
+            operators.append('v')
+        elif token in ['^','∧']:
+            while operators and operators[0] not in ['(','[','v','-']:
+                make_node(operators, operands)
+            operators.append('^')
+        else:
+            operands.append(token)
+
+    # No more input tokens. Finish up everything left undone.
+    while operators:
+        make_node(operators, operands)
+
+    return operands.pop()
+
+def tokenize(s):
+    """
+    Given a sentence (string) of propositional logic, return a list of its
+    tokens. Each token is a banana, a prop logic connective, or a symbol
+    (string). Legal syntax includes:
+        - () and [] for grouping
+        - - or ¬ for "not"
+        - ^ or ∧ for "and"
+        - v or ∨ for "or"  (note that "v" is not a valid symbol name)
+        - => or ⇒ for "implies"
+        - <=> or ⇔ for "equiv"
+        - x or ⊕ for "xor"  (note that "x" is not a valid symbol name)
+    """
+    return re.findall(r'\(|\)|\[|\]|\^|v|=>|<=>|x|-|¬|⇒|⇔|∧|∨|⊕|\w+', s)
 
 if __name__ == "__main__":
 
@@ -21,6 +86,8 @@ if __name__ == "__main__":
     sentence = sys.argv[1]
     print(f"Converting {sentence}...")
 
-    for c in convert_to_cnf(sentence):
-        print(c)
+    tree = convert_to_cnf(sentence)
+    print(tree)
+    #for c in convert_to_cnf(sentence):
+    #    print(c)
     
