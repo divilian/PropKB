@@ -2,6 +2,7 @@
 import sys
 import logging
 import re
+from copy import deepcopy
 from sat import Literal, Clause
 
 class Node():
@@ -25,8 +26,26 @@ def convert_to_cnf(s):
     """
     tokens = tokenize(s)
     tree = parse(tokens)
+    tree = eliminate_equiv(tree)
     return tree
-            
+
+def eliminate_equiv(non_cnf_tree):
+    if type(non_cnf_tree) is Node:
+        tree = deepcopy(non_cnf_tree)
+        if non_cnf_tree.me == "<=>":
+            reverse = deepcopy(non_cnf_tree)
+            tree.me = "=>"
+            reverse.me = "=>"
+            reverse.left, reverse.right = \
+                eliminate_equiv(reverse.right), eliminate_equiv(reverse.left)
+            return Node(left=tree, me="^", right=reverse)
+        else:
+            tree.left = eliminate_equiv(tree.left)
+            tree.right = eliminate_equiv(tree.right)
+            return tree
+    else:
+        return non_cnf_tree
+        
 
 def make_node(operators, operands):
     right = operands.pop()
