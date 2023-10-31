@@ -44,6 +44,14 @@ def parse(tokens):
         if token in '-¬':
             negated = parse(tokens)
             return Node(left='-',me=negated,right=None)
+        elif token in ['<=>','⇔']:
+            while ops and ops[-1] not in ['(','[']:
+                make_node(ops, operands)
+            ops.append('<=>')
+        elif token in ['=>','⇒']:
+            while ops and ops[-1] not in ['(','[','<=>']:
+                make_node(ops, operands)
+            ops.append('=>')
         elif token in ['v','∨']:
             while ops and ops[-1] not in ['(','[','<=>','=>']:
                 make_node(ops, operands)
