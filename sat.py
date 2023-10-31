@@ -235,5 +235,5 @@ if __name__ == "__main__":
     if provable:
         print(f"Yes, {clause} is guaranteed true!")
     else:
-        print(f"No, {clause} cannot be proven.")
-    pprint(assignments)
+        print(f"No, {clause} cannot be proven. For example:")
+        pprint(assignments)
