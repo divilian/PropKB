@@ -30,7 +30,10 @@ def convert_to_cnf(s):
 
 def make_node(operators, operands):
     right = operands.pop()
-    left = operands.pop()
+    if operators[-1] == '-':
+        left = None
+    else:
+        left = operands.pop()
     operands.append(Node(left,operators.pop(),right))
 
 def parse(tokens):
@@ -41,10 +44,7 @@ def parse(tokens):
         token = tokens.pop(0)
         logging.debug(f"token is |{token}|, operators=|{ops}|, "
             f"operands=|{operands}|")
-        if token in '-¬':
-            negated = parse(tokens)
-            return Node(left='-',me=negated,right=None)
-        elif token in ['<=>','⇔']:
+        if token in ['<=>','⇔']:
             while ops and ops[-1] not in ['(','[']:
                 make_node(ops, operands)
             ops.append('<=>')
@@ -57,9 +57,23 @@ def parse(tokens):
                 make_node(ops, operands)
             ops.append('v')
         elif token in ['^','∧']:
-            while ops and ops[-1] not in ['(','[','<=>','=>','v','-']:
+            while ops and ops[-1] not in ['(','[','<=>','=>','v']:
                 make_node(ops, operands)
             ops.append('^')
+        elif token in ['-','¬']:
+            while ops and ops[-1] not in ['(','[','<=>','=>','v','^','∧']:
+                make_node(ops, operands)
+            ops.append('-')
+        elif token in ['(','[']:
+            ops.append(token)
+        elif token in [')']:
+            while ops and ops[-1] not in ['(']:
+                make_node(ops, operands)
+            ops.pop()
+        elif token in [']']:
+            while ops and ops[-1] not in ['[']:
+                make_node(ops, operands)
+            ops.pop()
         else:
             operands.append(token)
 
