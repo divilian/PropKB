@@ -36,28 +36,28 @@ def make_node(operators, operands):
 def parse(tokens):
     logging.info(f"Parse {tokens}...")
     operands = []
-    operators = []
+    ops = []
     while tokens:
         token = tokens.pop(0)
-        logging.debug(f"token is |{token}|, operators=|{operators}|, "
+        logging.debug(f"token is |{token}|, operators=|{ops}|, "
             f"operands=|{operands}|")
         if token in '-¬':
             negated = parse(tokens)
             return Node(left='-',me=negated,right=None)
         elif token in ['v','∨']:
-            while operators and operators[0] not in ['(','[']:
-                make_node(operators, operands)
-            operators.append('v')
+            while ops and ops[-1] not in ['(','[','<=>','=>']:
+                make_node(ops, operands)
+            ops.append('v')
         elif token in ['^','∧']:
-            while operators and operators[0] not in ['(','[','v','-']:
-                make_node(operators, operands)
-            operators.append('^')
+            while ops and ops[-1] not in ['(','[','<=>','=>','v','-']:
+                make_node(ops, operands)
+            ops.append('^')
         else:
             operands.append(token)
 
     # No more input tokens. Finish up everything left undone.
-    while operators:
-        make_node(operators, operands)
+    while ops:
+        make_node(ops, operands)
 
     return operands.pop()
 
