@@ -64,7 +64,8 @@ class KB():
         self.clauses = set()
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
-                self.add_clause(Clause.parse(clause_line))
+                if not clause_line.startswith("#"):
+                    self.add_clause(Clause.parse(clause_line))
     def add_clause(self, c):
         self.clauses |= {c}
     def remove_clause(self, c):
