@@ -35,6 +35,7 @@ def convert_to_cnf(s):
     tree = eliminate_implies(tree)
     tree = eliminate_xors(tree)
     tree = move_neg_in(tree)
+    tree = distribute(tree)
     return tree
 
 def eliminate_equiv(non_cnf_tree):
@@ -121,6 +122,41 @@ def move_neg_in(non_cnf_tree):
         else:
             tree.left = move_neg_in(tree.left)
             tree.right = move_neg_in(tree.right)
+            return tree
+    else:
+        return non_cnf_tree
+
+def distribute(non_cnf_tree):
+    logging.debug(f"distribute({non_cnf_tree})...")
+    if type(non_cnf_tree) is Node:
+        tree = deepcopy(non_cnf_tree)
+        if tree.me == 'v':
+            if type(tree.left) is Node and tree.left.me == '^':
+                # Here we have (α∧β)∨γ and need to get (α∨γ)∧(β∨γ).
+                alpha = distribute(tree.left.left)
+                beta = distribute(tree.left.right)
+                gamma = distribute(tree.right)
+                gamma_clone = deepcopy(gamma)
+                tree.me = "^"
+                tree.left = Node(alpha,"v",gamma)
+                tree.right = Node(beta,"v",gamma)
+                return tree
+            elif type(tree.right) is Node and tree.right.me == '^':
+                # Here we have γ∨(α∧β) and need to get (γ∨α)∧(γ∨β).
+                alpha = distribute(tree.right.left)
+                beta = distribute(tree.right.right)
+                gamma = distribute(tree.left)
+                gamma_clone = deepcopy(gamma)
+                tree.me = "^"
+                tree.left = Node(gamma,"v",alpha)
+                tree.right = Node(gamma,"v",beta)
+                return tree
+            tree.left = distribute(tree.left)
+            tree.right = distribute(tree.right)
+            return tree
+        else:
+            tree.left = distribute(tree.left)
+            tree.right = distribute(tree.right)
             return tree
     else:
         return non_cnf_tree
