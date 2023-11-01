@@ -36,6 +36,11 @@ def convert_to_cnf(s):
     tree = eliminate_xors(tree)
     tree = move_neg_in(tree)
     tree = distribute(tree)
+
+    # Seems necessary to this again for "(p => q) <=> r" example at
+    # https://cs.nyu.edu/~davise/ai/prop.pdf ?
+    tree = move_neg_in(tree) 
+
     return tree
 
 def eliminate_equiv(non_cnf_tree):
