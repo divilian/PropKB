@@ -24,6 +24,37 @@ class Node():
         else:
             return "(" + self.me + str(self.right) + ")"
 
+def is_in_cnf(tree):
+    """
+    Given a parse tree (root Node) representing a sentence in propositional
+    logic, return True only if it's in CNF.
+    """
+    if type(tree) is str:
+        # Bottomed out in an atom.
+        return True
+    if tree.me == "-" and type(tree.right) is str:
+        return True
+    if tree.me == "^":
+        return is_in_cnf(tree.left) and is_in_cnf(tree.right)
+    if tree.me == "v":
+        return contains_only_ors(tree.left) and contains_only_ors(tree.right)
+    return False
+
+def contains_only_ors(tree):
+    """
+    Given a parse tree (root Node) representing a sentence in propositional
+    logic, return True if it has only ors (and nots from literals).
+    """
+    if type(tree) is str:
+        # Bottomed out in an atom.
+        return True
+    if tree.me == "-" and type(tree.right) is str:
+        return True
+    if tree.me == "v":
+        return contains_only_ors(tree.left) and contains_only_ors(tree.right)
+    return False
+
+
 def convert_to_cnf(s):
     """
     Given a sentence (string) of propositional logic, return a set of Clause
@@ -39,7 +70,7 @@ def convert_to_cnf(s):
 
     # Seems necessary to this again for "(p => q) <=> r" example at
     # https://cs.nyu.edu/~davise/ai/prop.pdf ?
-    tree = move_neg_in(tree) 
+    tree = move_neg_in(tree)
 
     return tree
 
@@ -60,7 +91,7 @@ def eliminate_equiv(non_cnf_tree):
             return tree
     else:
         return non_cnf_tree
-        
+
 def eliminate_xors(non_cnf_tree):
     logging.debug(f"eliminate_xors({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
@@ -80,7 +111,7 @@ def eliminate_xors(non_cnf_tree):
             return tree
     else:
         return non_cnf_tree
-        
+
 def eliminate_implies(non_cnf_tree):
     logging.debug(f"eliminate_implies({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
@@ -251,8 +282,9 @@ if __name__ == "__main__":
     sentence = sys.argv[1]
     print(f"Converting {sentence}...")
 
+    orig = parse(tokenize(sentence))
     tree = convert_to_cnf(sentence)
     print(tree)
-    #for c in convert_to_cnf(sentence):
-    #    print(c)
-    
+    print(f"Original in CNF? {is_in_cnf(orig)}")
+    print(f"Converted in CNF? {is_in_cnf(tree)}")
+
