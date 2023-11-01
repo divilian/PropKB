@@ -82,8 +82,8 @@ def eliminate_implies(non_cnf_tree):
             tree.right = eliminate_implies(tree.right)
             return tree
         else:
-            tree.left = eliminate_equiv(tree.left)
-            tree.right = eliminate_equiv(tree.right)
+            tree.left = eliminate_implies(tree.left)
+            tree.right = eliminate_implies(tree.right)
             return tree
     else:
         return non_cnf_tree
