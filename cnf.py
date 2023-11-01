@@ -38,6 +38,7 @@ def convert_to_cnf(s):
     return tree
 
 def eliminate_equiv(non_cnf_tree):
+    logging.debug(f"eliminate_equiv({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "<=>":
@@ -55,6 +56,7 @@ def eliminate_equiv(non_cnf_tree):
         return non_cnf_tree
         
 def eliminate_xors(non_cnf_tree):
+    logging.debug(f"eliminate_xors({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "x":
@@ -74,6 +76,7 @@ def eliminate_xors(non_cnf_tree):
         return non_cnf_tree
         
 def eliminate_implies(non_cnf_tree):
+    logging.debug(f"eliminate_implies({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "=>":
