@@ -18,6 +18,11 @@ class Node():
         if self.right:
             retval += "," + self.right.__repr__()
         return retval + ")"
+    def __str__(self):
+        if self.left:
+            return "(" + str(self.left) + self.me + str(self.right) + ")"
+        else:
+            return "(" + self.me + str(self.right) + ")"
 
 def convert_to_cnf(s):
     """
