@@ -34,6 +34,7 @@ def convert_to_cnf(s):
     tree = eliminate_equiv(tree)
     tree = eliminate_implies(tree)
     tree = eliminate_xors(tree)
+    tree = move_neg_in(tree)
     return tree
 
 def eliminate_equiv(non_cnf_tree):
@@ -86,7 +87,40 @@ def eliminate_implies(non_cnf_tree):
             return tree
     else:
         return non_cnf_tree
-        
+
+def move_neg_in(non_cnf_tree):
+    logging.debug(f"move_neg_in({non_cnf_tree})...")
+    if type(non_cnf_tree) is Node:
+        tree = deepcopy(non_cnf_tree)
+        if tree.me == "-":
+            logging.debug(f"  yep, we're a negation.")
+            if type(tree.right) is Node  and  tree.right.me == "-":
+                # Eliminate double-negation.
+                logging.debug(f"  eliminate double-negation...")
+                return move_neg_in(tree.right.right)
+            elif type(tree.right) is Node  and  tree.right.me == "^":
+                # Turn ¬(α∧β) into (¬α∨¬β) (DeMorgan's)
+                logging.debug(f"  apply DeMorgan's 1...")
+                tree.right.left = Node(None,"-",move_neg_in(tree.right.left))
+                tree.right.right = Node(None,"-",move_neg_in(tree.right.right))
+                tree.right.me = "v"
+                return tree.right
+            elif type(tree.right) is Node  and  tree.right.me == "v":
+                # Turn ¬(α∨β) into (¬α∧¬β) (DeMorgan's)
+                logging.debug(f"  apply DeMorgan's 2...")
+                tree.right.left = Node(None,"-",move_neg_in(tree.right.left))
+                tree.right.right = Node(None,"-",move_neg_in(tree.right.right))
+                tree.right.me = "^"
+                return tree.right
+            tree.left = move_neg_in(tree.left)
+            tree.right = move_neg_in(tree.right)
+            return tree
+        else:
+            tree.left = move_neg_in(tree.left)
+            tree.right = move_neg_in(tree.right)
+            return tree
+    else:
+        return non_cnf_tree
 
 def make_node(operators, operands):
     right = operands.pop()
@@ -165,7 +199,7 @@ def tokenize(s):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.DEBUG)
 
     if len(sys.argv) != 2:
         sys.exit("Usage: cnf.py sentence.")
