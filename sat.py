@@ -7,7 +7,6 @@ import logging
 from pprint import pprint
 
 class Literal():
-    vars = set()
     def __init__(self, varstring):
         if varstring[0] == "-":
             self.neg = True
@@ -15,7 +14,6 @@ class Literal():
         else:
             self.neg = False
             self.var = varstring
-        Literal.vars |= {self.var}
     def negated_form_of(self):
         a_copy = copy(self)
         a_copy.neg = not self.neg
@@ -61,11 +59,14 @@ class Clause():
 
 class KB():
     def __init__(self, filename):
+        self.vars = set()
         self.clauses = set()
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
                 if not clause_line.startswith("#"):
                     self.add_clause(Clause.parse(clause_line))
+        for c in self.clauses:
+            self.vars |= { l.var for l in c.lits }
     def add_clause(self, c):
         self.clauses |= {c}
     def remove_clause(self, c):
@@ -135,7 +136,7 @@ class KB():
         """
         logging.info("pure_elim...")
         made_progress = False
-        for vn in Literal.vars:
+        for vn in self.vars:
             logging.debug(f"  Looking at {vn}...")
             cs = [ c for c in remaining_clauses if c.contains_variable(vn) ]
             logging.debug(f"  cs is {[ str(c) for c in cs ]}")
@@ -167,7 +168,7 @@ class KB():
         if any([ len(c.lits) == 0 for c in remaining_clauses ]):
             # This is a contradiction! Return False.
             return False
-        remaining_vars = Literal.vars - set(assignments.keys())
+        remaining_vars = self.vars - set(assignments.keys())
         if len(remaining_vars) == 0:
             return assignments
         var_to_try = list(remaining_vars)[0]
