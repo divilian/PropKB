@@ -220,6 +220,28 @@ class KB():
             for c in self.clauses:
                 print(f"{c} evalu's to {c.evalu(assignments)}")
         return all([ c.evalu(assignments) for c in self.clauses ])
+
+    def is_equiv(self, other):
+        """
+        Exhaustively every set of assignments to variables and return True
+        only if this KB has all the same answers as the other KB passed.
+        Warning: this is exponential in the number of variables, of course.
+        """
+        if self.vars != other.vars:
+            # C'mon, don't waste my time.
+            return False
+        ret_val = {}
+        the_vars = list(self.vars)
+        some_vals = product({True,False},repeat=len(the_vars))
+        for some_val in some_vals:
+            assignments = { k:v for k,v in zip(the_vars, some_val) }
+            if self.evalu(assignments) != other.evalu(assignments):
+                logging.debug(f"Found difference in is_equiv() " 
+                    "{self.evalu(assignments)} != {other.evalu(assignments)}")
+                pprint(assignments)
+                return False
+        return True
+
 #   def calculate_all_assignments(self):
 #       """
 #       Return a dict whose keys are assignments dicts and whose values are
