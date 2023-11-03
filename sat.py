@@ -10,6 +10,7 @@ from pprint import pprint
 class Literal():
     def __init__(self, varstring):
         if varstring[0] == "-":
+            logging.info(f"New Literal({varstring})")
             self.neg = True
             self.var = varstring[1:]
         else:
@@ -65,19 +66,29 @@ class Clause():
         return f"Clause({self.lits})"
 
 class KB():
-    def __init__(self, filename):
+    def __init__(self, filename, already_in_cnf=False):
+        from cnf import convert_to_cnf
         self.vars = set()
         self.clauses = set()
+        """
+        If the file whose name is passed is known to already be in CNF, we
+        can skip a step and just create Clauses directly.
+        """
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
                 if not clause_line.startswith("#"):
-                    self.add_clause(Clause.parse(clause_line))
+                    if not already_in_cnf:
+                        clauses = convert_to_cnf(clause_line)
+                        for clause in clauses:
+                            self.add_clause(clause)
+                    else:
+                        self.add_clause(Clause.parse(clause_line))
         for c in self.clauses:
             self.vars |= { l.var for l in c.lits }
-    def add_clause(self, c):
-        self.clauses |= {c}
-    def remove_clause(self, c):
-        self.clauses -= {c}
+    def add_clause(self, clause):
+        self.clauses |= {clause}
+    def remove_clause(self, clause):
+        self.clauses -= {clause}
 
     def propagate_units(self, remaining_clauses, assignments):
         """
@@ -259,7 +270,7 @@ if __name__ == "__main__":
     if not os.path.exists(filename):
         sys.exit(f"No such file {filename}.")
     
-    myKB = KB(sys.argv[1])
+    myKB = KB(sys.argv[1], False)
     clause = sys.argv[2]
 
     print(f"Solving {myKB}...")
