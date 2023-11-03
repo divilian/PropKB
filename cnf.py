@@ -110,7 +110,27 @@ def convert_to_cnf(s):
     # https://cs.nyu.edu/~davise/ai/prop.pdf ?
     tree = move_neg_in(tree)
 
-    return tree
+    return extract_clauses(tree)
+
+
+def extract_clauses(tree):
+    logging.info(f"=== The type of {tree} is {type(tree)}")
+    if type(tree) is str:
+        return {Clause.parse(tree)}
+    clauses = set()
+    if tree.me == '^':
+        clauses |= extract_clauses(tree.left)
+        clauses |= extract_clauses(tree.right)
+    elif tree.me in ['-','v']:
+        as_text = re.sub(r'[\(\)]','', str(tree))
+        as_text = re.sub(r'v',' ', as_text)
+        clauses |= {Clause.parse(as_text)}
+    else:
+        raise(f"Illegal operator {tree.me} in CNF sentence!")
+    return clauses
+
+
+
 
 def eliminate_equiv(non_cnf_tree):
     logging.debug(f"eliminate_equiv({non_cnf_tree})...")
