@@ -23,6 +23,38 @@ class Node():
             return "(" + str(self.left) + self.me + str(self.right) + ")"
         else:
             return "(" + self.me + str(self.right) + ")"
+    def evalu(self, assignments):
+        if not self.left:
+            # The only way to not have a left child is if we're a neg
+            assert self.me == "-"
+            if type(self.right) is Node:
+                right = self.right.evalu(assignments)
+            elif type(self.right) is str:
+                right = assignments[self.right]
+            return not right
+        else:
+            if type(self.left) is Node:
+                left = self.left.evalu(assignments)
+            elif type(self.left) is str:
+                left = assignments[self.left]
+            if type(self.right) is Node:
+                right = self.right.evalu(assignments)
+            elif type(self.right) is str:
+                right = assignments[self.right]
+            if self.me == '-':
+                return not right
+            if self.me == '^':
+                return left and right
+            elif self.me == 'v':
+                return left or right
+            elif self.me == 'x':
+                return left != right
+            elif self.me == '=>':
+                return not left or right
+            elif self.me == '<=>':
+                return left == right
+            else:
+                raise Exception(f"No such op {self.me}!")
 
 def is_in_cnf(tree):
     """
