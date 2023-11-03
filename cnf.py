@@ -24,6 +24,12 @@ class Node():
         else:
             return "(" + self.me + str(self.right) + ")"
     def evalu(self, assignments):
+        """
+        Return the result of evaluating this parse tree with the set of
+        variable assignments passed. The answer should be True or False. If
+        not all the variables are present in the dictionary passed,
+        unpredictable behavior will result.
+        """
         if not self.left:
             # The only way to not have a left child is if we're a neg
             assert self.me == "-"
