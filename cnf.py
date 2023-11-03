@@ -222,6 +222,9 @@ def move_neg_in(non_cnf_tree):
 
 def distribute(non_cnf_tree):
     logging.debug(f"distribute({non_cnf_tree})...")
+    if is_in_cnf(non_cnf_tree):
+        logging.debug("short cut!")
+        return non_cnf_tree
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == 'v':
@@ -234,7 +237,7 @@ def distribute(non_cnf_tree):
                 tree.me = "^"
                 tree.left = Node(alpha,"v",gamma)
                 tree.right = Node(beta,"v",gamma)
-                return tree
+                return distribute(tree)
             elif type(tree.right) is Node and tree.right.me == '^':
                 # Here we have γ∨(α∧β) and need to get (γ∨α)∧(γ∨β).
                 alpha = distribute(tree.right.left)
@@ -244,7 +247,7 @@ def distribute(non_cnf_tree):
                 tree.me = "^"
                 tree.left = Node(gamma,"v",alpha)
                 tree.right = Node(gamma,"v",beta)
-                return tree
+                return distribute(tree)
             tree.left = distribute(tree.left)
             tree.right = distribute(tree.right)
             return tree
@@ -332,7 +335,7 @@ def tokenize(s):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     if len(sys.argv) != 2:
         sys.exit("Usage: cnf.py sentence.")
