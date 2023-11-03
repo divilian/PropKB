@@ -4,6 +4,7 @@ import os
 from copy import copy, deepcopy
 import numpy as np
 import logging
+from itertools import product
 from pprint import pprint
 
 class Literal():
@@ -198,6 +199,30 @@ class KB():
         remaining_clauses = deepcopy(self.clauses)
         assignments = {}
         return self.solve_rec(remaining_clauses, assignments)
+
+    def evalu(self, assignments):
+        """
+        Given a dict of variables to values, return True if this KB is True
+        under that assignment.
+        """
+        if logging.root.level == logging.DEBUG:
+            for c in self.clauses:
+                print(f"{c} evalu's to {c.evalu(assignments)}")
+        return all([ c.evalu(assignments) for c in self.clauses ])
+#   def calculate_all_assignments(self):
+#       """
+#       Return a dict whose keys are assignments dicts and whose values are
+#       True or False baesd on what the KB value has for each set of
+#       assignments. Warning: this is exponential in the number of variables,
+#       of course.
+#       """
+#       ret_val = {}
+#       the_vars = list(self.variables)
+#       some_vals = product({True,False},repeat=len(the_vars)
+#       for some_val in some_vals:
+#           assignments = { k:v for k,v in zip(the_vars, some_val }
+#           ret_val = 
+
 
     def can_prove(self, hypothesis):
         """
