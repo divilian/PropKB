@@ -52,6 +52,12 @@ class Clause():
         for lit in self.lits:
             if lit.var == var:
                 return lit.neg
+    def evalu(self, assignments):
+        """
+        Given a dict of variables to values, return True if this clause is True
+        under that assignment.
+        """
+        return any([assignments[lit.var] != lit.neg for lit in self.lits ])
     def __str__(self):
         return " ∨ ".join(str(l) for l in list(self.lits))
     def __repr__(self):
