@@ -3,7 +3,7 @@ import sys
 import logging
 import re
 from copy import deepcopy
-from sat import Literal, Clause, KB
+from PropKB import Literal, Clause, KB
 
 class Node():
     def __init__(self, left=None, me=None, right=None):

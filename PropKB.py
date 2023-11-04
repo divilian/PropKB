@@ -308,7 +308,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
 
     if len(sys.argv) != 2:
-        sys.exit("Usage: sat kb_file.")
+        sys.exit("Usage: PropKB kb_file.")
 
     filename = sys.argv[1]
     if not os.path.exists(filename):
