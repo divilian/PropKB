@@ -1,6 +1,7 @@
 
 import sys
 import os
+import re
 from copy import copy, deepcopy
 import numpy as np
 import logging
@@ -66,25 +67,26 @@ class Clause():
         return f"Clause({self.lits})"
 
 class KB():
-    def __init__(self, filename, already_in_cnf=False):
+    def __init__(self, filename=None, already_in_cnf=False):
         from cnf import convert_to_cnf
         self.vars = set()
         self.clauses = set()
-        # If the file whose name is passed is known to already be in CNF, we
-        # can skip a step and just create Clauses directly.
-        with open(filename, "r", encoding="utf-8") as f:
-            for clause_line in [ l.strip() for l in f.readlines() ]:
-                logging.debug(f"  clause_line: {clause_line}")
-                if not clause_line.startswith("#"):
-                    if not already_in_cnf:
-                        clauses = convert_to_cnf(clause_line)
-                        for clause in clauses:
-                            logging.debug(f"  clause: {clause}")
-                            self.add_clause(clause)
-                    else:
-                        self.add_clause(Clause.parse(clause_line))
-        for c in self.clauses:
-            self.vars |= { l.var for l in c.lits }
+        if filename:
+            # If the file whose name is passed is known to already be in CNF,
+            # we can skip a step and just create Clauses directly.
+            with open(filename, "r", encoding="utf-8") as f:
+                for clause_line in [ l.strip() for l in f.readlines() ]:
+                    logging.debug(f"  clause_line: {clause_line}")
+                    if not clause_line.startswith("#"):
+                        if not already_in_cnf:
+                            clauses = convert_to_cnf(clause_line)
+                            for clause in clauses:
+                                logging.debug(f"  clause: {clause}")
+                                self.add_clause(clause)
+                        else:
+                            self.add_clause(Clause.parse(clause_line))
+            for c in self.clauses:
+                self.vars |= { l.var for l in c.lits }
     def add_clause(self, clause):
         self.clauses |= {clause}
     def remove_clause(self, clause):
@@ -263,11 +265,25 @@ class KB():
         return ret_val
 
     def ask(self, hypothesis):
+        """
+        Given a string of propositional logic, return whether this KB can
+        confirm it is True, can confirm it is False, or cannot confirm either
+        way (the value in the latter case will be the string "IDK").
+        """
         if self.can_prove(hypothesis):
             return True
         elif self.can_prove("-(" + hypothesis + ")"):
             return False
         return "IDK"
+
+    def tell(self, fact):
+        """
+        Update this KB by adding the passed fact (represented as a string of
+        propositional logic).
+        """
+        from cnf import convert_to_cnf
+        for clause in convert_to_cnf(fact):
+            self.add_clause(clause)
 
     def can_prove(self, hypothesis):
         """
@@ -294,13 +310,28 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.WARNING)
 
-    if len(sys.argv) != 2:
-        sys.exit("Usage: PropKB kb_file.")
+    if len(sys.argv) not in [1,2]:
+        sys.exit("Usage: PropKB [prop_logic_file.kb|cnf_file.cnf].")
 
-    filename = sys.argv[1]
-    if not os.path.exists(filename):
-        sys.exit(f"No such file {filename}.")
-    
-    myKB = KB(sys.argv[1], False)
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+        if not os.path.exists(filename):
+            sys.exit(f"No such file {filename}.")
+        myKB = KB(sys.argv[1], filename.endswith('.cnf'))
+        print(f"Loaded {filename}.")
+    else:
+        myKB = KB()
+        print("Created empty KB.")
 
-    pprint(myKB.audit())
+    print("Add (additional) facts to the KB like this 'tell: (b ^ c) => d'")
+    print("Query the KB like this 'ask: a v -b'")
+    pattern = re.compile(r'(?P<cmd>\w+):? (?P<sent>.*)')
+    user_input = input("ask/tell (done): ")
+    while user_input != "done":
+        matches = pattern.match(user_input)
+        if matches['cmd'][0] in ['A','a']:
+            print(myKB.ask(matches['sent']))
+        else:
+            myKB.tell(matches['sent'])
+            print("Updated KB.")
+        user_input = input("ASK/TELL (done): ")
