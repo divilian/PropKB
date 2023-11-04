@@ -70,10 +70,8 @@ class KB():
         from cnf import convert_to_cnf
         self.vars = set()
         self.clauses = set()
-        """
-        If the file whose name is passed is known to already be in CNF, we
-        can skip a step and just create Clauses directly.
-        """
+        # If the file whose name is passed is known to already be in CNF, we
+        # can skip a step and just create Clauses directly.
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
                 logging.debug(f"  clause_line: {clause_line}")
@@ -115,7 +113,7 @@ class KB():
                     if the_lit.neg != (not assignments[the_lit.var]):
                         # Houston, we have a problem. We have at least two unit
                         # clauses with opposite polarity!
-                        sys.exit("Houston, we have two incompatible unit clauses.")
+                        sys.exit(f"Inherently incompatible {the_lit.var}.")
                 assignments[the_lit.var] = not the_lit.neg
                 logging.debug(f"    propagate_units officially assigns "
                     f"{the_lit.var} the value {not the_lit.neg}")
