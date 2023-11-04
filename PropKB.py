@@ -256,52 +256,41 @@ class KB():
         """
         ret_val = {}
         for var in self.vars:
-            if self.can_prove(var)[0]:
+            if self.can_prove(var):
                 ret_val[var] = True
-            elif self.can_prove("-" + var)[0]:
+            elif self.can_prove("-" + var):
                 ret_val[var] = False
             else:
                 ret_val[var] = "IDK"
         return ret_val
 
-#   def calculate_all_assignments(self):
-#       """
-#       Return a dict whose keys are assignments dicts and whose values are
-#       True or False baesd on what the KB value has for each set of
-#       assignments. Warning: this is exponential in the number of variables,
-#       of course.
-#       """
-#       ret_val = {}
-#       the_vars = list(self.variables)
-#       some_vals = product({True,False},repeat=len(the_vars)
-#       for some_val in some_vals:
-#           assignments = { k:v for k,v in zip(the_vars, some_val }
-#           ret_val = 
-
+    def ask(self, hypothesis):
+        if self.can_prove(hypothesis):
+            return True
+        elif self.can_prove("-(" + hypothesis + ")"):
+            return False
+        return "IDK"
 
     def can_prove(self, hypothesis):
         """
-        Return True if the hypothesis passed (a Literal) is guaranteed to be
-        true by this knowledge base, and False otherwise.
-        TODO: permit arbitrary expressions as hypotheses.
+        Return True if the hypothesis passed (a string of prop logic) is
+        guaranteed to be true by this knowledge base, and False otherwise.
         """
-        if type(hypothesis) is str:
-            hypothesis = Literal(hypothesis)
-        neg_hypo = hypothesis.negated_form_of()
-        neg_hypo_clause = Clause()
-        neg_hypo_clause.add_literal(neg_hypo)
+        from cnf import convert_to_cnf
+        neg_hypo_clauses = convert_to_cnf("-(" + hypothesis + ")")
         remaining_clauses = deepcopy(self.clauses)
-        remaining_clauses |= {neg_hypo_clause}
+        remaining_clauses |= neg_hypo_clauses
         assignments = {}
         if self.solve_rec(remaining_clauses, assignments):
-            return False, assignments
+            return False
         else:
-            return True, assignments
+            return True
 
     def __str__(self):
         return " ∧ ".join(f"({c})" for c in list(self.clauses))
     def __repr__(self):
         return f"KB({self.clauses})"
+
 
 if __name__ == "__main__":
 

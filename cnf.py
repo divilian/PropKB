@@ -67,7 +67,7 @@ def is_in_cnf(tree):
     Given a parse tree (root Node) representing a sentence in propositional
     logic, return True only if it's in CNF.
     """
-    if type(tree) is str:
+    if not tree or type(tree) is str:
         # Bottomed out in an atom.
         return True
     if tree.me == "-" and type(tree.right) is str:
