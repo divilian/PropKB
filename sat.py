@@ -76,10 +76,12 @@ class KB():
         """
         with open(filename, "r", encoding="utf-8") as f:
             for clause_line in [ l.strip() for l in f.readlines() ]:
+                logging.debug(f"  clause_line: {clause_line}")
                 if not clause_line.startswith("#"):
                     if not already_in_cnf:
                         clauses = convert_to_cnf(clause_line)
                         for clause in clauses:
+                            logging.debug(f"  clause: {clause}")
                             self.add_clause(clause)
                     else:
                         self.add_clause(Clause.parse(clause_line))
@@ -224,10 +226,12 @@ class KB():
     def is_equiv(self, other):
         """
         Exhaustively every set of assignments to variables and return True
-        only if this KB has all the same answers as the other KB passed.
-        Warning: this is exponential in the number of variables, of course.
+        only if this KB has all the same answers as the other object passed,
+        which might be another KB, or might be a parse tree (Node) from the
+        cnf package. Warning: this is exponential in the number of variables,
+        of course.
         """
-        if self.vars != other.vars:
+        if type(other) is KB  and  self.vars != other.vars:
             # C'mon, don't waste my time.
             return False
         ret_val = {}
@@ -240,6 +244,9 @@ class KB():
                     "{self.evalu(assignments)} != {other.evalu(assignments)}")
                 pprint(assignments)
                 return False
+            else:
+                print(f"Check: got {self.evalu(assignments)} for:")
+                pprint(assignments)
         return True
 
 #   def calculate_all_assignments(self):

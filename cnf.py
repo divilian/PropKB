@@ -3,7 +3,7 @@ import sys
 import logging
 import re
 from copy import deepcopy
-from sat import Literal, Clause
+from sat import Literal, Clause, KB
 
 class Node():
     def __init__(self, left=None, me=None, right=None):
@@ -333,19 +333,29 @@ def tokenize(s):
     """
     return re.findall(r'\(|\)|\[|\]|\^|v|=>|<=>|x|-|¬|⇒|⇔|∧|∨|⊕|\w+', s)
 
+
 if __name__ == "__main__":
+
+    # This main program will read Propositional Logic (not CNF) from a file,
+    # then both (1) parse it to a tree and (2) create a KB from it, which
+    # will convert it to a set of CNF clauses. It will then verify the two
+    # are equivalent by exhaustively testing every possible set of variable
+    # assignments.
 
     logging.basicConfig(level=logging.WARNING)
 
     if len(sys.argv) != 2:
-        sys.exit("Usage: cnf.py sentence.")
+        sys.exit("Usage: cnf.py filename.kb.")
 
-    sentence = sys.argv[1]
-    print(f"Converting {sentence}...")
+    filename = sys.argv[1]
+    print(f"Converting from {filename}...")
 
-    orig = parse(tokenize(sentence))
-    tree = convert_to_cnf(sentence)
-    print(tree)
-    print(f"Original in CNF? {is_in_cnf(orig)}")
-    print(f"Converted in CNF? {is_in_cnf(tree)}")
-
+    with open(filename, encoding="utf-8") as f:
+        sentence = " ^ ".join([ "(" + l + ")" for l in f.readlines() ])
+        sentence = re.sub(r'\n','',sentence)
+    non_cnf = parse(tokenize(sentence))
+    in_cnf = KB(filename)
+    if in_cnf.is_equiv(non_cnf):
+        print(f"Confirmed: CNF version and original version are equivalent.")
+    else:
+        print(f"Whoops: CNF version and original version differ!")
