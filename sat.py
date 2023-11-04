@@ -249,6 +249,21 @@ class KB():
                 pprint(assignments)
         return True
 
+    def audit(self):
+        """
+        Return a dict whose keys are the variables of this KB, and whose
+        values are either True, False, or "IDK" (don't know).
+        """
+        ret_val = {}
+        for var in self.vars:
+            if self.can_prove(var)[0]:
+                ret_val[var] = True
+            elif self.can_prove("-" + var)[0]:
+                ret_val[var] = False
+            else:
+                ret_val[var] = "IDK"
+        return ret_val
+
 #   def calculate_all_assignments(self):
 #       """
 #       Return a dict whose keys are assignments dicts and whose values are
@@ -292,20 +307,13 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.WARNING)
 
-    if len(sys.argv) != 3:
-        sys.exit("Usage: sat kb_file clause.")
+    if len(sys.argv) != 2:
+        sys.exit("Usage: sat kb_file.")
 
     filename = sys.argv[1]
     if not os.path.exists(filename):
         sys.exit(f"No such file {filename}.")
     
     myKB = KB(sys.argv[1], False)
-    clause = sys.argv[2]
 
-    print(f"Solving {myKB}...")
-    provable, assignments = myKB.can_prove(clause)
-    if provable:
-        print(f"Yes, {clause} is guaranteed true!")
-    else:
-        print(f"No, {clause} cannot be proven. For example:")
-        pprint(assignments)
+    pprint(myKB.audit())
