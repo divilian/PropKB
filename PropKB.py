@@ -334,4 +334,4 @@ if __name__ == "__main__":
         else:
             myKB.tell(matches['sent'])
             print("Updated KB.")
-        user_input = input("ASK/TELL (done): ")
+        user_input = input("ask/tell (done): ")
