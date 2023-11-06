@@ -89,6 +89,7 @@ class KB():
                 self.vars |= { l.var for l in c.lits }
     def add_clause(self, clause):
         self.clauses |= {clause}
+        self.vars |= { l.var for l in clause.lits }
     def remove_clause(self, clause):
         self.clauses -= {clause}
 
@@ -325,13 +326,20 @@ if __name__ == "__main__":
 
     print("Add (additional) facts to the KB like this 'tell: (b ^ c) => d'")
     print("Query the KB like this 'ask: a v -b'")
-    pattern = re.compile(r'(?P<cmd>\w+):? (?P<sent>.*)')
-    user_input = input("ask/tell (done): ")
+    pattern = re.compile(r'(?P<cmd>\w+):? ?(?P<sent>.*)')
+    user_input = input("ask/tell/vars (done): ")
     while user_input != "done":
         matches = pattern.match(user_input)
-        if matches['cmd'][0] in ['A','a']:
-            print(myKB.ask(matches['sent']))
+        if matches:
+            if matches['cmd'][0] in ['A','a']:
+                print(myKB.ask(matches['sent']))
+            elif matches['cmd'][0] in ['T','t']:
+                myKB.tell(matches['sent'])
+                print("Updated KB.")
+            elif matches['cmd'][0] in ['V','v']:
+                print(f"Vars: {','.join(sorted(myKB.vars))}")
+            else:
+                print(f"Didn't understand command '{user_input}'.")
         else:
-            myKB.tell(matches['sent'])
-            print("Updated KB.")
-        user_input = input("ask/tell (done): ")
+            print(f"Didn't understand command '{user_input}'.")
+        user_input = input("ask/tell/vars (done): ")
