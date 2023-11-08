@@ -11,7 +11,6 @@ from pprint import pprint
 class Literal():
     def __init__(self, varstring):
         if varstring[0] == "-":
-            logging.info(f"New Literal({varstring})")
             self.neg = True
             self.var = varstring[1:]
         else:
@@ -39,7 +38,8 @@ class Clause():
     @classmethod
     def parse(cls, string):
         retval = cls()
-        retval.lits = { Literal(v) for v in string.split(" ") }
+        splits = [ s for s in re.split(r'\s+',string) if len(s) > 0 ]
+        retval.lits = { Literal(v) for v in splits }
         return retval
     def add_literal(self, lit):
         self.lits.add(lit)
@@ -76,12 +76,10 @@ class KB():
             # we can skip a step and just create Clauses directly.
             with open(filename, "r", encoding="utf-8") as f:
                 for clause_line in [ l.strip() for l in f.readlines() ]:
-                    logging.debug(f"  clause_line: {clause_line}")
                     if not clause_line.startswith("#"):
                         if not already_in_cnf:
                             clauses = convert_to_cnf(clause_line)
                             for clause in clauses:
-                                logging.debug(f"  clause: {clause}")
                                 self.add_clause(clause)
                         else:
                             self.add_clause(Clause.parse(clause_line))
@@ -99,18 +97,15 @@ class KB():
         simplifications: auto-satisfy any clauses that match it, and remove
         its negation from any clauses that match its negation.
         """
-        logging.info("propagate_units...")
         while remaining_clauses:
             nrc = len(remaining_clauses)
             i = 0
             while i < nrc and not list(remaining_clauses)[i].is_unit():
                 i += 1
             if i == nrc:
-                logging.debug(f"Continue ({i})")
                 break
             else:
                 unit_clause = list(remaining_clauses)[i]
-                logging.debug(f"Looking at unit_clause {unit_clause}...")
                 the_lit = list(unit_clause.lits)[0]
                 if the_lit.var in assignments:
                     if the_lit.neg != (not assignments[the_lit.var]):
@@ -118,8 +113,6 @@ class KB():
                         # clauses with opposite polarity!
                         sys.exit(f"Inherently incompatible {the_lit.var}.")
                 assignments[the_lit.var] = not the_lit.neg
-                logging.debug(f"    propagate_units officially assigns "
-                    f"{the_lit.var} the value {not the_lit.neg}")
                 remaining_clauses -= {unit_clause}
 
                 # For every unit clause, we know that the value of its only
@@ -129,7 +122,6 @@ class KB():
                 clauses_to_remove = []
                 for c in remaining_clauses:
                     if c.contains_literal(the_lit):
-                        logging.debug(f"    Removing clause {c}")
                         clauses_to_remove += [c]
                 for ctr in clauses_to_remove:
                     remaining_clauses -= {ctr}
@@ -141,8 +133,6 @@ class KB():
                 for c in remaining_clauses:
                     negated_form = the_lit.negated_form_of()
                     if c.contains_literal(negated_form):
-                        logging.debug(f"    Removing lit {negated_form} from "
-                            f"{c}...")
                         c.remove_literal(negated_form)
             continue
 
@@ -155,27 +145,19 @@ class KB():
         For any variable that appears with only one polarity, go ahead and set
         it to what it needs to be.
         """
-        logging.info("pure_elim...")
         made_progress = False
         for vn in self.vars:
-            logging.debug(f"  Looking at {vn}...")
             cs = [ c for c in remaining_clauses if c.contains_variable(vn) ]
-            logging.debug(f"  cs is {[ str(c) for c in cs ]}")
             pols = { c.polarity_of_variable(vn) for c in cs }
             if len(pols) == 0:
                 # Must have been removed by propagate_units(). Never mind.
                 pass
             if len(pols) == 1:
                 # Great! It's pure. Eliminate it.
-                logging.debug(f"  Variable {vn} is pure!") 
                 if list(pols)[0] == 1:
                     assignments[vn] = True
-                    logging.debug(f"  pure_elim() officially assigns {vn} "
-                        "the value True")
                 else:
                     assignments[vn] = False
-                    logging.debug(f"  pure_elim() officially assigns {vn} "
-                        "the value False")
                 for c in cs:
                     remaining_clauses -= {c}
                 made_progress = True
@@ -219,9 +201,6 @@ class KB():
         Given a dict of variables to values, return True if this KB is True
         under that assignment.
         """
-        if logging.root.level == logging.DEBUG:
-            for c in self.clauses:
-                print(f"{c} evalu's to {c.evalu(assignments)}")
         return all([ c.evalu(assignments) for c in self.clauses ])
 
     def is_equiv(self, other):
@@ -241,13 +220,7 @@ class KB():
         for some_val in some_vals:
             assignments = { k:v for k,v in zip(the_vars, some_val) }
             if self.evalu(assignments) != other.evalu(assignments):
-                logging.debug(f"Found difference in is_equiv() " 
-                    "{self.evalu(assignments)} != {other.evalu(assignments)}")
-                pprint(assignments)
                 return False
-            else:
-                print(f"Check: got {self.evalu(assignments)} for:")
-                pprint(assignments)
         return True
 
     def audit(self):

@@ -127,7 +127,6 @@ def convert_to_cnf(s):
 
 
 def extract_clauses(tree):
-    logging.info(f"=== The type of {tree} is {type(tree)}")
     if type(tree) is str:
         return {Clause.parse(tree)}
     clauses = set()
@@ -146,7 +145,6 @@ def extract_clauses(tree):
 
 
 def eliminate_equiv(non_cnf_tree):
-    logging.debug(f"eliminate_equiv({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "<=>":
@@ -155,7 +153,8 @@ def eliminate_equiv(non_cnf_tree):
             reverse.me = "=>"
             reverse.left, reverse.right = \
                 eliminate_equiv(reverse.right), eliminate_equiv(reverse.left)
-            return Node(left=tree, me="^", right=reverse)
+            bob = Node(left=tree, me="^", right=reverse)
+            return bob
         else:
             tree.left = eliminate_equiv(tree.left)
             tree.right = eliminate_equiv(tree.right)
@@ -164,7 +163,6 @@ def eliminate_equiv(non_cnf_tree):
         return non_cnf_tree
 
 def eliminate_xors(non_cnf_tree):
-    logging.debug(f"eliminate_xors({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "x":
@@ -184,7 +182,6 @@ def eliminate_xors(non_cnf_tree):
         return non_cnf_tree
 
 def eliminate_implies(non_cnf_tree):
-    logging.debug(f"eliminate_implies({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "=>":
@@ -200,25 +197,20 @@ def eliminate_implies(non_cnf_tree):
         return non_cnf_tree
 
 def move_neg_in(non_cnf_tree):
-    logging.debug(f"move_neg_in({non_cnf_tree})...")
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
         if tree.me == "-":
-            logging.debug(f"  yep, we're a negation.")
             if type(tree.right) is Node  and  tree.right.me == "-":
                 # Eliminate double-negation.
-                logging.debug(f"  eliminate double-negation...")
                 return move_neg_in(tree.right.right)
             elif type(tree.right) is Node  and  tree.right.me == "^":
                 # Turn ¬(α∧β) into (¬α∨¬β) (DeMorgan's)
-                logging.debug(f"  apply DeMorgan's 1...")
                 tree.right.left = Node(None,"-",move_neg_in(tree.right.left))
                 tree.right.right = Node(None,"-",move_neg_in(tree.right.right))
                 tree.right.me = "v"
                 return tree.right
             elif type(tree.right) is Node  and  tree.right.me == "v":
                 # Turn ¬(α∨β) into (¬α∧¬β) (DeMorgan's)
-                logging.debug(f"  apply DeMorgan's 2...")
                 tree.right.left = Node(None,"-",move_neg_in(tree.right.left))
                 tree.right.right = Node(None,"-",move_neg_in(tree.right.right))
                 tree.right.me = "^"
@@ -234,9 +226,7 @@ def move_neg_in(non_cnf_tree):
         return non_cnf_tree
 
 def distribute(non_cnf_tree):
-    logging.debug(f"distribute({non_cnf_tree})...")
     if is_in_cnf(non_cnf_tree):
-        logging.debug("short cut!")
         return non_cnf_tree
     if type(non_cnf_tree) is Node:
         tree = deepcopy(non_cnf_tree)
@@ -280,13 +270,10 @@ def make_node(operators, operands):
     operands.append(Node(left,operators.pop(),right))
 
 def parse(tokens):
-    logging.info(f"Parse {tokens}...")
     operands = []
     ops = []
     while tokens:
         token = tokens.pop(0)
-        logging.debug(f"token is |{token}|, operators=|{ops}|, "
-            f"operands=|{operands}|")
         if token in ['<=>','⇔']:
             while ops and ops[-1] not in ['(','[']:
                 make_node(ops, operands)
