@@ -6,7 +6,6 @@ from copy import copy, deepcopy
 import numpy as np
 import logging
 from itertools import product
-from pprint import pprint
 
 class Literal():
     def __init__(self, varstring):
