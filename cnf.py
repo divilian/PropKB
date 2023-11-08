@@ -61,6 +61,13 @@ class Node():
                 return left == right
             else:
                 raise Exception(f"No such op {self.me}!")
+    def __eq__(self, other):
+        if type(other) is not Node:
+            return False
+        return (((self.left == None and other.left == None) or
+                                            self.left == other.left)  and
+            self.me == other.me  and
+            self.right == other.right)
 
 def is_in_cnf(tree):
     """
@@ -103,12 +110,18 @@ def convert_to_cnf(s):
     tree = eliminate_equiv(tree)
     tree = eliminate_implies(tree)
     tree = eliminate_xors(tree)
-    tree = move_neg_in(tree)
-    tree = distribute(tree)
 
-    # Seems necessary to this again for "(p => q) <=> r" example at
-    # https://cs.nyu.edu/~davise/ai/prop.pdf ?
-    tree = move_neg_in(tree)
+    # Continue to move negatives inward until we can't anymore.
+    new_tree = move_neg_in(tree)
+    while new_tree != tree:
+        tree = new_tree
+        new_tree = move_neg_in(tree)
+
+    # Continue to apply the distributive law until we can't anymore.
+    new_tree = distribute(tree)
+    while new_tree != tree:
+        tree = new_tree
+        new_tree = distribute(tree)
 
     return extract_clauses(tree)
 
