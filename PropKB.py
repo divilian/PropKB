@@ -66,11 +66,16 @@ class Clause():
         return f"Clause({self.lits})"
 
 class KB():
-    def __init__(self, filename=None, already_in_cnf=False):
+    """
+    A propositional logic knowledge base, with .tell() and .ask() methods
+    supporting arbitrary PL sentences.
+    """
+    def __init__(self, filename=None):
         from cnf import convert_to_cnf
         self.vars = set()
         self.clauses = set()
         if filename:
+            already_in_cnf = filename.endswith('.cnf')
             # If the file whose name is passed is known to already be in CNF,
             # we can skip a step and just create Clauses directly.
             with open(filename, "r", encoding="utf-8") as f:
@@ -84,11 +89,100 @@ class KB():
                             self.add_clause(Clause.parse(clause_line))
             for c in self.clauses:
                 self.vars |= { l.var for l in c.lits }
+
+    def tell(self, fact):
+        """
+        Update this KB by adding the passed fact (represented as a string of
+        propositional logic).
+        """
+        from cnf import convert_to_cnf
+        for clause in convert_to_cnf(fact):
+            self.add_clause(clause)
+
+    def ask(self, hypothesis):
+        """
+        Given a string of propositional logic, return whether this KB can
+        confirm it is True, can confirm it is False, or cannot confirm either
+        way (the value in the latter case will be the string "IDK").
+        """
+        if self.can_prove(hypothesis):
+            return True
+        elif self.can_prove("-(" + hypothesis + ")"):
+            return False
+        return "IDK"
+
+    def get_solution(self):
+        """
+        If possible, return a sample solution (set of assignments to variables)
+        that satisfies this knowledge base. Otherwise, return False.
+        """
+        remaining_clauses = deepcopy(self.clauses)
+        assignments = {}
+        return self.solve_rec(remaining_clauses, assignments)
+
+    def is_equiv(self, other):
+        """
+        Exhaustively try every set of assignments to variables and return True
+        only if this KB has all the same answers as the other object passed,
+        which might be another KB, or might be a parse tree (Node) from the
+        cnf package. Warning: this is exponential in the number of variables,
+        of course.
+        """
+        if type(other) is KB  and  self.vars != other.vars:
+            # C'mon, don't waste my time.
+            return False
+        ret_val = {}
+        the_vars = list(self.vars)
+        some_vals = product({True,False},repeat=len(the_vars))
+        for some_val in some_vals:
+            assignments = { k:v for k,v in zip(the_vars, some_val) }
+            if self.evalu(assignments) != other.evalu(assignments):
+                return False
+        return True
+
+    def audit(self):
+        """
+        Return a dict whose keys are the variables of this KB, and whose
+        values are either True, False, or "IDK" (don't know).
+        """
+        ret_val = {}
+        for var in self.vars:
+            if self.can_prove(var):
+                ret_val[var] = True
+            elif self.can_prove("-" + var):
+                ret_val[var] = False
+            else:
+                ret_val[var] = "IDK"
+        return ret_val
+
+    def can_prove(self, hypothesis):
+        """
+        Return True if the hypothesis passed (a string of prop logic) is
+        guaranteed to be true by this knowledge base, and False otherwise.
+        """
+        from cnf import convert_to_cnf
+        neg_hypo_clauses = convert_to_cnf("-(" + hypothesis + ")")
+        remaining_clauses = deepcopy(self.clauses)
+        remaining_clauses |= neg_hypo_clauses
+        assignments = {}
+        if self.solve_rec(remaining_clauses, assignments):
+            return False
+        else:
+            return True
+
     def add_clause(self, clause):
         self.clauses |= {clause}
         self.vars |= { l.var for l in clause.lits }
+
     def remove_clause(self, clause):
         self.clauses -= {clause}
+
+    def evalu(self, assignments):
+        """
+        Given a dict of variables to values, return True if this KB is True
+        under that assignment.
+        """
+        return all([ c.evalu(assignments) for c in self.clauses ])
 
     def propagate_units(self, remaining_clauses, assignments):
         """
@@ -186,92 +280,6 @@ class KB():
             return result
         return False
 
-    def get_solution(self):
-        """
-        If possible, return a sample solution (set of assignments to variables)
-        that satisfies this knowledge base. Otherwise, return False.
-        """
-        remaining_clauses = deepcopy(self.clauses)
-        assignments = {}
-        return self.solve_rec(remaining_clauses, assignments)
-
-    def evalu(self, assignments):
-        """
-        Given a dict of variables to values, return True if this KB is True
-        under that assignment.
-        """
-        return all([ c.evalu(assignments) for c in self.clauses ])
-
-    def is_equiv(self, other):
-        """
-        Exhaustively every set of assignments to variables and return True
-        only if this KB has all the same answers as the other object passed,
-        which might be another KB, or might be a parse tree (Node) from the
-        cnf package. Warning: this is exponential in the number of variables,
-        of course.
-        """
-        if type(other) is KB  and  self.vars != other.vars:
-            # C'mon, don't waste my time.
-            return False
-        ret_val = {}
-        the_vars = list(self.vars)
-        some_vals = product({True,False},repeat=len(the_vars))
-        for some_val in some_vals:
-            assignments = { k:v for k,v in zip(the_vars, some_val) }
-            if self.evalu(assignments) != other.evalu(assignments):
-                return False
-        return True
-
-    def audit(self):
-        """
-        Return a dict whose keys are the variables of this KB, and whose
-        values are either True, False, or "IDK" (don't know).
-        """
-        ret_val = {}
-        for var in self.vars:
-            if self.can_prove(var):
-                ret_val[var] = True
-            elif self.can_prove("-" + var):
-                ret_val[var] = False
-            else:
-                ret_val[var] = "IDK"
-        return ret_val
-
-    def ask(self, hypothesis):
-        """
-        Given a string of propositional logic, return whether this KB can
-        confirm it is True, can confirm it is False, or cannot confirm either
-        way (the value in the latter case will be the string "IDK").
-        """
-        if self.can_prove(hypothesis):
-            return True
-        elif self.can_prove("-(" + hypothesis + ")"):
-            return False
-        return "IDK"
-
-    def tell(self, fact):
-        """
-        Update this KB by adding the passed fact (represented as a string of
-        propositional logic).
-        """
-        from cnf import convert_to_cnf
-        for clause in convert_to_cnf(fact):
-            self.add_clause(clause)
-
-    def can_prove(self, hypothesis):
-        """
-        Return True if the hypothesis passed (a string of prop logic) is
-        guaranteed to be true by this knowledge base, and False otherwise.
-        """
-        from cnf import convert_to_cnf
-        neg_hypo_clauses = convert_to_cnf("-(" + hypothesis + ")")
-        remaining_clauses = deepcopy(self.clauses)
-        remaining_clauses |= neg_hypo_clauses
-        assignments = {}
-        if self.solve_rec(remaining_clauses, assignments):
-            return False
-        else:
-            return True
 
     def __str__(self):
         return " ∧ ".join(f"({c})" for c in list(self.clauses))
@@ -290,7 +298,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         if not os.path.exists(filename):
             sys.exit(f"No such file {filename}.")
-        myKB = KB(sys.argv[1], filename.endswith('.cnf'))
+        myKB = KB(sys.argv[1])
         print(f"Loaded {filename}.")
     else:
         myKB = KB()
