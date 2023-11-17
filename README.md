@@ -118,7 +118,7 @@ described in the "File format: `.kb` files" section, above.**
 
 Remove the passed non-fact from the KB. This isn't as easy as it sounds, and
 won't always work if the exact negation of the fake news wasn't directly
-previously inserted, but rather derived from previous facts.
+previously inserted, but rather was derived from previous facts.
 
 Example:
 ```
