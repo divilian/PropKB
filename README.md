@@ -114,6 +114,18 @@ described in the "File format: `.kb` files" section, above.**
 
 
 ---
+### `.retract(fake_news)`
+
+Remove the passed non-fact from the KB. This isn't as easy as it sounds, and
+won't always work if the exact negation of the fake news wasn't directly
+previously inserted, but rather derived from previous facts.
+
+Example:
+```
+myKB.retract("IraqHasWMDs")
+```
+
+---
 ### `.ask(hypothesis)`
 
 Propose a statement of logic to the knowledge base, and receive an answer of
