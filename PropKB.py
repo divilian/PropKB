@@ -337,7 +337,7 @@ if __name__ == "__main__":
             elif matches['cmd'][0] in ['T','t']:
                 myKB.tell(matches['sent'])
                 print("Updated KB.")
-            elif matches['cmd'][0] in ['V','+']:
+            elif matches['cmd'][0] in ['V','v']:
                 print(f"Vars: {','.join(sorted(myKB.vars))}")
             else:
                 print(f"Didn't understand command '{user_input}'.")
