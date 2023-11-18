@@ -40,26 +40,22 @@ myKB = KB("myInitialContents.cnf")
 Each line of a plain-text `.kb` file is expected to be a propositional logic
 statement, with the following specifics:
 
-* Variable names can be any sequence of letters/numbers, in any case, but _not_
-just the plain letter "`v`" or the plain letter "`x`" (these are operators).
 * Two kinds of nesting parentheses can be used for convenience: "`()`" and
 "`[]`". There's no precedence between the two, and they can be arbitrarily
 nested.
-* For unary "**not**," use "`-`" or "`¬`".
+* For unary "**not**," use "`-`" or "`¬`" (Unicode U+00AC).
 * For binary "**and**," use "`^`" or "`∧`".
-* For binary "**or**," use "`v`" or "`∨`" (note that "`v`" is *not* a valid
-symbol name).
-* For binary "**xor**," use "`x`" or "`⊕`" (note that "`x`" is *not* a valid
-symbol name).
-* For binary "**implies**," use "`=>`" or "`⇒`".
-* For binary "**equiv**," use "`<=>`" or "`⇔`".
+* For binary "**or**," use "`+`" or "`∨`" (Unicode U+2228, not the letter "v").
+* For binary "**xor**," use "`⊕`" (Unicode U+2295).
+* For binary "**implies**," use "`=>`" or "`⇒`" (Unicode U+21D2).
+* For binary "**equiv**," use "`<=>`" or "`⇔`" (Unicode U+21D4).
 
 Example:
 ```
-[(relaxed v excited) ^ awake] => happy
+[(relaxed + excited) ^ awake] => happy
 -relaxed
 excited ^ awake <=> thrilled
-asleep x awake
+asleep ⊕ awake
 excited => -asleep
 ```
 
@@ -136,7 +132,7 @@ guaranteed to be false, or unknown (neither true nor false can be ruled out).
 
 Example:
 ```
-myKB.ask("riveting v (expensive x outOfDate)")
+myKB.ask("riveting + (expensive ⊕ outOfDate)")
 "IDK"
 ```
 
@@ -149,7 +145,7 @@ only tests whether it can be proven true. Returns a boolean.
 
 Example:
 ```
-myKB.can_prove("riveting v (expensive x outOfDate)")
+myKB.can_prove("riveting + (expensive ⊕ outOfDate)")
 False
 ```
 
@@ -223,7 +219,7 @@ Example:
 ```
 $ python PropKB.py 
 Created empty KB.
-ask/tell/vars (done): tell [(relaxed v excited) ^ awake] => happy
+ask/tell/vars (done): tell [(relaxed + excited) ^ awake] => happy
 Updated KB.
 ask/tell/vars (done): vars
 Vars: awake,excited,happy,relaxed
